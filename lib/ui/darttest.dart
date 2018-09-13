@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of dart.ui;
-
 /// How the pointer has changed since the last report.
 enum PointerChange {
   /// The input from the pointer is no longer directed towards this receiver.
@@ -84,6 +82,8 @@ class PointerData {
     // this.tilt: 0.0,
     // this.sentinal: 0.0,
   });
+  
+  print(scrollDeltaY);
 
   /// Time of event dispatch, relative to an arbitrary timeline.
   final Duration timeStamp;
@@ -208,7 +208,7 @@ class PointerData {
 
   /// A final value that is passed so that we are passing more than 21 values in the packet
   // final double sentinal;
-
+  
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
 
@@ -250,4 +250,48 @@ class PointerDataPacket {
   ///
   /// This list might contain multiple pieces of data about the same pointer.
   final List<PointerData> data;
+}
+
+const int _kPointerDataFieldCount = 14;
+
+main() {
+
+  Uint8List list = Uint8List.fromList([72, 74, 254, 131, 158, 1, 0, 0, 7, 0, 0,
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 160, 6, 178,
+                   159, 64, 0, 0, 0, 64, 157, 136, 135, 64,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240,
+                      63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240, 191]);
+ByteData packet = ByteData.view(list.buffer);
+
+  const int kStride = Int64List.bytesPerElement;
+  const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
+  final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
+  assert(length * kBytesPerPointerData == packet.lengthInBytes);
+  final List<PointerData> data = new List<PointerData>(length);
+
+  for (int i = 0; i < length; ++i) {
+    int offset = i * _kPointerDataFieldCount;
+    data[i] = new PointerData(
+      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+    );
+    assert(offset == (i + 1) * _kPointerDataFieldCount);
+  }
+  print(scrollDeltaY);
 }

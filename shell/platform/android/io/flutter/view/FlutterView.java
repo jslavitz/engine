@@ -462,31 +462,19 @@ public class FlutterView extends SurfaceView
 
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerIndex)); // distance
-            packet.putDouble(0.0); // distance_max
+            // packet.putDouble(0.0); // distance_max
         } else {
             packet.putDouble(0.0); // distance
-            packet.putDouble(0.0); // distance_max
+            // packet.putDouble(0.0); // distance_max
         }
 
-        packet.putDouble(event.getToolMajor(pointerIndex)); // radius_major
-        packet.putDouble(event.getToolMinor(pointerIndex)); // radius_minor
-
-        packet.putDouble(0.0); // radius_min
-        packet.putDouble(0.0); // radius_max
-
-        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
-        
-        if (pointerKind == kPointerDeviceKindStylus) {
-            packet.putDouble(event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)); // tilt
-        } else {
-            packet.putDouble(4.0); // tilt
-        }
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
 
+        System.out.println("FlutterView.java: " + event.getAxisValue(MotionEvent.AXIS_VSCROLL));
         // Dummy value that is needed due to bug in the converter writing the last 8 bytes
         // of the packet to 0.
-        packet.putDouble(0.0);
+        // packet.putDouble(0.0);
     }
 
     @Override
@@ -509,7 +497,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 22;
+        final int kPointerDataFieldCount = 14;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();
@@ -542,7 +530,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 22;
+        final int kPointerDataFieldCount = 14;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();

@@ -4,6 +4,9 @@
 
 part of dart.ui;
 
+
+
+
 String _decodeUTF8(ByteData message) {
   return message != null ? utf8.decoder.convert(message.buffer.asUint8List()) : null;
 }
@@ -185,7 +188,13 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 // While we're only sending 21 values across, we leave this as 22 due to a bug that
 // writes the last 8 bytes to 0 after a few hundred calls. The last value in the packet
 // then is not written to any variable.
-const int _kPointerDataFieldCount = 22;
+const int _kPointerDataFieldCount = 14;
+
+Future<void> writeToFile(ByteData data, String path) {
+  final buffer = data.buffer;
+  return new File(path).writeAsBytes(
+      buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), mode: FileMode.append);
+}
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -193,33 +202,46 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
   assert(length * kBytesPerPointerData == packet.lengthInBytes);
   final List<PointerData> data = new List<PointerData>(length);
+
+  print('hooks.dart (1): ' + packet.getFloat64(kStride * 13, _kFakeHostEndian).toString());
+
+  int dur = packet.getInt64(kStride * 0, _kFakeHostEndian);
+  Duration timeStamp = new Duration(microseconds: dur);
+  int pc = packet.getInt64(kStride * 1, _kFakeHostEndian);
+  PointerChange change = PointerChange.values[pc];
+  int kind = packet.getInt64(kStride * 2, _kFakeHostEndian);
+  PointerDeviceKind pointerDeviceKind = PointerDeviceKind.values[kind];
+  int device = packet.getInt64(kStride * 3, _kFakeHostEndian);
+  double physicalX = packet.getFloat64(kStride * 4, _kFakeHostEndian);
+  double physicalY = packet.getFloat64(kStride * 5, _kFakeHostEndian);
+  int buttons = packet.getInt64(kStride * 6, _kFakeHostEndian);
+  bool obscured = packet.getInt64(kStride * 7, _kFakeHostEndian) != 0;
+  double pressure = packet.getFloat64(kStride * 8, _kFakeHostEndian);
+  double pressureMin = packet.getFloat64(kStride * 9, _kFakeHostEndian);
+  double pressureMax = packet.getFloat64(kStride * 10, _kFakeHostEndian);
+  double distance = packet.getFloat64(kStride * 11, _kFakeHostEndian);
+  double scrollDeltaX = packet.getFloat64(kStride * 12, _kFakeHostEndian);
+  double scrollDeltaY = packet.getFloat64(kStride * 13, _kFakeHostEndian);
+
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data[i] = new PointerData(
-      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      sentinal: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      timeStamp: timeStamp,
+      change: change,
+      kind: pointerDeviceKind,
+      device: device,
+      physicalX: physicalX,
+      physicalY: physicalY,
+      buttons: buttons,
+      obscured: obscured,
+      pressure: pressure,
+      pressureMin: pressureMin,
+      pressureMax: pressureMax,
+      distance: distance,
+      scrollDeltaX: scrollDeltaX,
+      scrollDeltaY: scrollDeltaY,
     );
-    assert(offset == (i + 1) * _kPointerDataFieldCount);
+    print('hooks.dart (2): ' + data[i].scrollDeltaY.toString());
   }
   return new PointerDataPacket(data: data);
 }

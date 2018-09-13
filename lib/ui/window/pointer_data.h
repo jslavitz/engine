@@ -43,16 +43,16 @@ struct alignas(8) PointerData {
   double pressure_min;
   double pressure_max;
   double distance;
-  double distance_max;
-  double radius_major;
-  double radius_minor;
-  double radius_min;
-  double radius_max;
-  double orientation;
+  // double distance_max;
+  // double radius_major;
+  // double radius_minor;
+  // double radius_min;
+  // double radius_max;
+  // double orientation;
   double scroll_delta_x;
   double scroll_delta_y;
-  double tilt;
-  double sentinal;
+  // double tilt;
+  // double sentinal;
 
   void Clear();
 };
