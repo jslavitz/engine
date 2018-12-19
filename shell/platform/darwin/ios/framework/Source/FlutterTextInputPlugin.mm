@@ -535,33 +535,42 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
-  // TODO(cbracken) Implement.
-  return CGRectZero;
+  NSLog(@"%@", @"print 0"); 
+  NSLog(@"%@", range.start);  
+  NSLog(@"%@", range.end);
+  return CGRectMake(100, 500, 80, 40);
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   // TODO(cbracken) Implement.
-  return CGRectZero;
+  NSLog(@"%@", @"print 1"); 
+  // return CGRectZero;
+  return CGRectMake(20, 100, 4, 10);
+
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
+  NSLog(@"%@", @"print 2");
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextPosition positionWithIndex:currentIndex];
 }
 
 - (NSArray*)selectionRectsForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
+  NSLog(@"%@", @"print 3");
   return @[];
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
+  NSLog(@"%@", @"print 4");
   return range.start;
 }
 
 - (UITextRange*)characterRangeAtPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
+  NSLog(@"%@", @"print 5");
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
 }
