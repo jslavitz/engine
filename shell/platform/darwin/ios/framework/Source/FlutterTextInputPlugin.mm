@@ -146,6 +146,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic, strong) UITextRange* markedTextRange;
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
+@property(nonatomic, assign) UITextPosition* lastStartPosition;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
@@ -287,6 +288,17 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     if (update)
       [self updateEditingState];
   }
+}
+
+- (NSDictionary<NSAttributedStringKey, id> *)textStylingAtPosition:(UITextPosition *)position inDirection:(UITextStorageDirection)direction {
+  NSUInteger positionIndex = ((FlutterTextPosition*)position).index;
+  NSUInteger startIndex = ((FlutterTextPosition*)self.lastStartPosition).index;
+
+  NSLog(@"%lu and %lu", positionIndex, startIndex);
+  if (self.lastStartPosition == position)
+    NSLog(@"%s", "word recomendation");
+  NSDictionary *dict = @{ NSFontAttributeName : [UIFont systemFontOfSize:17] };
+  return dict;
 }
 
 - (id)insertDictationResultPlaceholder {
@@ -529,23 +541,37 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 #pragma mark - UITextInput cursor, selection rect handling
 
-// The following methods are required to support force-touch cursor positioning
-// and to position the
+// The following methods are required to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
-  NSLog(@"%@", @"print 0"); 
-  NSLog(@"%@", range.start);  
-  NSLog(@"%@", range.end);
-  return CGRectMake(100, 500, 80, 40);
+  NSUInteger fromIndex = ((FlutterTextPosition*)range.start).index;
+  NSUInteger toIndex = ((FlutterTextPosition*)range.end).index;
+
+  NSString* str = [self textInRange:range];
+  self.lastStartPosition = range.start;
+  UITextChecker *textChecker = [[UITextChecker alloc] init];
+  NSArray *guesses = [NSArray array];
+  guesses = [textChecker guessesForWordRange:NSMakeRange(0, [str length])
+                                    inString:str
+                                    language:@"en_US"];
+  NSString* suggestion = [guesses firstObject];
+
+  [_textInputDelegate updateAutocorrectSuggestionState: @{@"suggestion" : suggestion, @"start": @(fromIndex), @"end": @(toIndex)}
+                      withClient: _textInputClient];
+
+  NSLog(@"fromIndex: %lu, toIndex: %lu", fromIndex, toIndex);
+
+  return CGRectMake(100, 300, 45, 40);
+
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
-  // TODO(cbracken) Implement.
-  NSLog(@"%@", @"print 1"); 
-  // return CGRectZero;
-  return CGRectMake(20, 100, 4, 10);
+  NSUInteger fromIndex = ((FlutterTextPosition*)position).index;
+  NSLog(@"caret: %lu", fromIndex);
+  return CGRectMake(90, 440, 4, 20);
+
 
 }
 

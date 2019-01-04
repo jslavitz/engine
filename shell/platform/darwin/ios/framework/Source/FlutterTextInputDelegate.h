@@ -34,6 +34,7 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)point;
+- (void)updateAutocorrectSuggestionState:(NSDictionary*)state withClient:(int)client;
 
 @end
 

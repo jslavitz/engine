@@ -392,6 +392,12 @@
                               arguments:@[ @(client), stateString, position ]];
 }
 
+- (void)updateAutocorrectSuggestionState:(NSDictionary*)state withClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateAutocorrectSuggestionState"
+                              arguments:@[ @(client), state ]];
+}
+
+
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
   NSString* actionString;
   switch (action) {

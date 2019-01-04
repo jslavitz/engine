@@ -29,6 +29,8 @@ id<FlutterViewEngineDelegate> _delegate;
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
                                  reason:nil
                                userInfo:nil]);
+
+
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
