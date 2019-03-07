@@ -255,54 +255,34 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void) dismissAutocorrect
 {
-  NSLog(@"dismissing");
-  NSString *originalString = [[NSString alloc] initWithString:self.text];
-  NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
+  NSString *originalText = [[NSString alloc] initWithString:self.text];
+  NSRange originalSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
+  NSString *tempText = [self.text substringWithRange:NSMakeRange(0, self.text.length - 1)];
+  NSInteger tempCaretLocation = tempText.length;
+  NSRange tempSelectedRange = [self clampSelection:NSMakeRange(tempCaretLocation, 0) forText:self.text];
 
-  NSRange prefixRange = NSMakeRange(0, self.text.length - 1);
-  NSString *prefix = [self.text substringWithRange:prefixRange];
-  // NSLog(@"%@", prefix);
-
-//   [self.inputDelegate textWillChange:self];
-//   NSLog(@"dismissing1");
-//   [self.text setString:@""];
-//   NSLog(@"dismissing2");
-//   self.markedTextRange = nil;
-//   NSLog(@"dismissing3");
-//   [self.inputDelegate textDidChange:self];
-// NSLog(@"dismissing4");
-
-  NSString* newText = prefix;
+  // Temporarily delete a character to effectively dismiss the autocorrect notification.
+  // Don't submit the change to flutter.
   [self.inputDelegate textWillChange:self];
-  [self.text setString:newText];
+  [self.text setString:tempText];
   self.markedTextRange = nil;
-  NSInteger selectionBase = prefixRange.length;
-  NSInteger selectionExtent = prefixRange.length;
-  NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
-                                                           ABS(selectionBase - selectionExtent))
-                                       forText:self.text];
 
   [self.inputDelegate selectionWillChange:self];
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
-          updateEditingState:NO];
-  _selectionAffinity = _kTextAffinityDownstream;
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:tempSelectedRange] updateEditingState:NO];
   [self.inputDelegate selectionDidChange:self];
   [self.inputDelegate textDidChange:self];
 
-
+  // Restore the text to the original string and selection range. Again don't submit the
+  // change to flutter as the value of the text or selection has not changed since the
+  // beginning of the function.
   [self.inputDelegate textWillChange:self];
-  [self.text setString:originalString];
+  [self.text setString:originalText];
   self.markedTextRange = nil;
-  NSLog(@"original: %@", originalString);
-
   [self.inputDelegate selectionWillChange:self];
 
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:oldSelectedRange]
-          updateEditingState:NO];
-  _selectionAffinity = _kTextAffinityDownstream;
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:originalSelectedRange] updateEditingState:NO];
   [self.inputDelegate selectionDidChange:self];
   [self.inputDelegate textDidChange:self];
-// [self updateEditingState];
 }
 
 - (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
