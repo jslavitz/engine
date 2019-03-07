@@ -242,6 +242,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
     [self.inputDelegate selectionDidChange:self];
+
   }
 
   if (textChanged) {
@@ -250,6 +251,58 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     // For consistency with Android behavior, send an update to the framework.
     [self updateEditingState];
   }
+}
+
+- (void) dismissAutocorrect
+{
+  NSLog(@"dismissing");
+  NSString *originalString = [[NSString alloc] initWithString:self.text];
+  NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
+
+  NSRange prefixRange = NSMakeRange(0, self.text.length - 1);
+  NSString *prefix = [self.text substringWithRange:prefixRange];
+  // NSLog(@"%@", prefix);
+
+//   [self.inputDelegate textWillChange:self];
+//   NSLog(@"dismissing1");
+//   [self.text setString:@""];
+//   NSLog(@"dismissing2");
+//   self.markedTextRange = nil;
+//   NSLog(@"dismissing3");
+//   [self.inputDelegate textDidChange:self];
+// NSLog(@"dismissing4");
+
+  NSString* newText = prefix;
+  [self.inputDelegate textWillChange:self];
+  [self.text setString:newText];
+  self.markedTextRange = nil;
+  NSInteger selectionBase = prefixRange.length;
+  NSInteger selectionExtent = prefixRange.length;
+  NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
+                                                           ABS(selectionBase - selectionExtent))
+                                       forText:self.text];
+
+  [self.inputDelegate selectionWillChange:self];
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+          updateEditingState:NO];
+  _selectionAffinity = _kTextAffinityDownstream;
+  [self.inputDelegate selectionDidChange:self];
+  [self.inputDelegate textDidChange:self];
+
+
+  [self.inputDelegate textWillChange:self];
+  [self.text setString:originalString];
+  self.markedTextRange = nil;
+  NSLog(@"original: %@", originalString);
+
+  [self.inputDelegate selectionWillChange:self];
+
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:oldSelectedRange]
+          updateEditingState:NO];
+  _selectionAffinity = _kTextAffinityDownstream;
+  [self.inputDelegate selectionDidChange:self];
+  [self.inputDelegate textDidChange:self];
+// [self updateEditingState];
 }
 
 - (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
@@ -560,10 +613,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
                                     language:@"en_US"];
   NSString* suggestion = [guesses firstObject];
 
-  [_textInputDelegate updateAutocorrectSuggestionState: @{@"suggestion" : suggestion, @"start": @(fromIndex), @"end": @(toIndex)}
-                      withClient: _textInputClient];
+  // [_textInputDelegate updateAutocorrectSuggestionState: @{@"suggestion" : suggestion, @"start": @(fromIndex), @"end": @(toIndex)}
+  //                     withClient: _textInputClient];
 
-  NSLog(@"fromIndex: %lu, toIndex: %lu", fromIndex, toIndex);
+  NSLog(@"suggestion: %@, fromIndex: %lu, toIndex: %lu", suggestion, fromIndex, toIndex);
 
   return CGRectMake(100, 300, 45, 40);
 
@@ -728,6 +781,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     result(nil);
   } else if ([method isEqualToString:@"TextInput.clearClient"]) {
     [self clearTextInputClient];
+    result(nil);
+  } else if ([method isEqualToString:@"TextInput.dismissAutocorrect"]) {
+    [_view dismissAutocorrect];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
